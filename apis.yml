@@ -56,21 +56,6 @@ common:
 
 apis: []
 
-x-coverage:
-  state: unreadable
-  reason: js-rendered-docs
-  detail: Docs at https://www.callagent.pro are unreachable and render only via JavaScript.
-  evidence:
-    - url: https://www.callagent.pro/docs/agent-api.md
-      status: null
-  checked: 2026-09-25
-  state: none
-  reason: no-developer-program
-  method: derived
-  generated: '2026-09-25'
-  generator: derive-coverage.py (pre-flight evidence)
-  detail: >-
-    the company publishes no developer documentation host and no machine-readable contract on its own domain
 x-enrichment:
   date: '2026-09-25'
   status: enriched

@@ -1,0 +1,36 @@
+# Front Door AI Index — callagentpro — 2026-09-17
+# AI vocabulary counted on the provider's root page. Generated; do not edit.
+# `score` is null unless ownership is `own` — see front_door_ai.py.
+front_door_ai:
+  slug: callagentpro
+  lexicon_version: '1.0'
+  probed_at: '2026-09-25'
+  host: www.callagent.pro
+  final_host: www.callagent.pro
+  ownership: own
+  owner: callagentpro
+  shares_host_with: null
+  inherited_from: null
+  alias_of: null
+  verdict: scored
+  score: 23
+  band: 6
+  band_label: dominant
+  host_score: 23
+  density: 12.67
+  words: 1815
+  tiers:
+    agentic: 5
+    core: 16
+    model: 2
+  ambiguous: 41
+  top_terms:
+    agent: 39
+    AI: 14
+    AI agent: 4
+    LLMs: 2
+    ChatGPT: 1
+    Claude: 1
+    automation: 1
+    llms.txt: 1
+    smart: 1

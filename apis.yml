@@ -1,64 +1,54 @@
-aid: callagentpro
-
 name: callagent.pro
-
-image: https://www.callagent.pro/images/callagent-hand-logo-small.png
-
-description: 'CallAgent.pro provides a platform that enables businesses to create AI‑driven phone agents for automated inbound and outbound calls. The service offers programmable voice workflows, integration with CRM and help‑desk systems, and analytics dashboards to monitor call performance. It targets contact‑center operations, sales teams, and customer‑support departments seeking to augment human agents with conversational AI. Documentation and SDKs are planned for future release.'
-
+aid: callagentpro
+description: callagent.pro provides human-like AI phone agents that answer and place real phone calls. Its REST
+  Agent API (Bearer keys prefixed cak_live_, base https://www.callagent.pro) covers building agents, assigning numbers
+  and SIP trunks, test chats and test calls, call transcripts, recordings and summaries, contacts, do-not-call lists,
+  and billing, including x402 USDC top-ups on Base. Submitted through apis.io/add.
 url: https://raw.githubusercontent.com/api-evangelist/callagentpro/refs/heads/main/apis.yml
-
 x-type: company
-
-x-source: harvest:new-submission
-
-x-tier: profiled
-x-tier-reason: enrichment pass 2026-09-25 (modular-v1; was harvest)
-
-specificationVersion: '0.20'
-
-created: '2026-09-25'
-
-modified: '2026-09-25'
-
+x-source: apis-io-submission
+x-submitted-by: info@callagent.pro, apis.io/add 2026-09-22 (docs https://callagent.pro/docs)
+x-tier: stub
+x-tier-reason: apis.io/add submission worked by the support sweep 2026-09-23; host probed healthy (root 200, invented
+  path 404, llms.txt 200)
+specificationVersion: '0.23'
+created: '2026-09-23'
+modified: '2026-09-23'
 tags:
-- Company
-- AI
+- AI Agents
 - Voice
 - Telephony
-- Automation
-- SaaS
-
-maintainers:
-- FN: Kin Lane
-  email: kin@apievangelist.com
-- FN: APIs.json
-  email: info@apis.io
-
+- Phone Agents
+- SIP
+- x402
+- Call Automation
+apis:
+- aid: callagentpro:agent-api
+  name: callagent.pro Agent API
+  description: 'REST API for everything the callagent.pro dashboard does: agents, test-chat and test-call, numbers,
+    SIP accounts and trunks, calls and live calls, knowledge, contacts, do-not-call, and billing including x402
+    top-ups. Documented in the provider llms.txt, which names an OpenAPI 3.1 spec as authoritative.'
+  humanURL: https://www.callagent.pro/docs/agent-api.md
+  tags:
+  - AI Agents
+  - Voice
+  - Telephony
+  properties:
+  - type: OpenAPI
+    name: OpenAPI (provider-hosted)
+    url: https://www.callagent.pro/openapi/agent-api.yaml
+  - type: Documentation
+    url: https://www.callagent.pro/docs/agent-api.md
 common:
-- type: Hosts
-  url: hosts/callagentpro-hosts.yml
-- type: TermsOfService
-  url: https://www.callagent.pro/terms
-- type: Login
-  url: https://www.callagent.pro/dashboard/login
-- type: Documentation
-  url: https://www.callagent.pro/docs/agent-api.md
+- type: Website
+  url: https://www.callagent.pro/
 - type: Blog
   url: https://www.callagent.pro/blog
-- type: GettingStarted
-  url: https://www.callagent.pro/blog/ai-phone-agent-getting-started
-- type: APIReference
-  url: https://www.callagent.pro/llms.txt
-- type: DomainSecurity
-  url: security/callagentpro-domain-security.yml
-# Website pointer removed: domain unreachable and no evidence of official site.
-
-apis: []
-
-x-enrichment:
-  date: '2026-09-25'
-  status: enriched
-  artifacts_added: 4
-  pass: modular-v1
-  engine: identity=local,contract=local,surfaces=local,docs=local
+- type: TermsOfService
+  url: https://www.callagent.pro/terms
+- type: PrivacyPolicy
+  url: https://www.callagent.pro/policy
+x-enrichment-note: '2026-09-23 local-v5 pass BLOCKED: after ~25 probes the host 85.215.231.137 began refusing TCP
+  443 from our IP (connection refused for 40+ minutes). llms.txt was fetched (200) and saved verbatim; the OpenAPI
+  3.1 spec it names at /openapi/agent-api.yaml was never fetched. Re-run slowly (one request every few seconds);
+  pointers above come from the llms.txt and sitemap.xml and are unverified.'

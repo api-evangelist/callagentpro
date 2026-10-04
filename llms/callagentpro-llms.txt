@@ -1,0 +1,164 @@
+# callagent.pro
+
+> AI phone agents that answer and place real phone calls. Everything the
+> dashboard can do, an API key can do too: build an agent, give it a number
+> or a SIP trunk, test it, put it on real calls, then read back transcripts,
+> recordings, summaries and billing. No browser, no dashboard, no scraping.
+
+If you are an AI agent acting for a user: you need exactly one thing from
+them, an API key. Ask for it, then work entirely through the REST API below.
+Do not ask them to click through the dashboard, and do not drive the dashboard
+with a browser extension — there is a documented endpoint for every screen.
+
+## Get a key (the one human step)
+
+The user mints it at **https://www.callagent.pro/admin/settings**, tab
+**API & Webhooks**, then hands it over. It looks like `cak_live_...`, is shown
+once, and can be revoked from the same screen. You cannot mint it yourself, and
+nothing else on this list requires them.
+
+## Authentication
+
+    Authorization: Bearer cak_live_...
+    Content-Type: application/json
+
+Base URL: `https://www.callagent.pro` — use the `www` host. The apex
+301-redirects, and most clients drop the body when a POST is redirected, so
+writes would silently fail while reads looked fine.
+
+Every response is scoped to the account that owns the key.
+
+## Machine-readable description
+
+- [OpenAPI 3.1 spec](https://www.callagent.pro/openapi/agent-api.yaml): every
+  endpoint, schema and error. Importable as a ChatGPT Action or into any
+  OpenAPI-aware tool. Start here — it is authoritative.
+- [Agent API guide](https://www.callagent.pro/docs/agent-api.md): the same
+  surface in prose, with worked flows.
+
+## Build and run an agent
+
+    GET  /api/v1/meta                   languages, voices, ASR models, LLM servers
+    POST /api/v1/agents                 create one (name, prompt, language, voice, ...)
+    GET  /api/v1/agents                 list        /api/v1/agents/{id} for one
+    PATCH /api/v1/agents/{id}           change any subset of fields
+    POST /api/v1/agents/{id}/duplicate  copy an existing one
+    DELETE /api/v1/agents/{id}
+
+## Test it before it touches a real caller
+
+    POST /api/v1/agents/{id}/test-chat  run a scripted conversation through the
+                                        real pipeline and score every turn
+    POST /api/v1/agents/{id}/test-call  place a real call to a number you give
+
+## Give it a line
+
+    GET  /api/v1/numbers                numbers on the account
+    PATCH /api/v1/numbers/{id}          point a number at an agent
+    GET/POST /api/v1/sip-accounts       extensions an ATA/PBX/Fritz!Box registers to
+    GET/POST /api/v1/trunks             outbound SIP trunks
+    GET  /api/v1/outbound-numbers       what it can present as caller ID
+
+## Read results: transcripts, recordings, summaries
+
+    GET /api/v1/calls                   history; filter by status, date_from,
+                                        date_to, search; limit/offset paging
+    GET /api/v1/calls/{id}              transcript [[speaker, text, time], ...],
+                                        captured variables, summary, audio_url,
+                                        duration, status
+    GET /api/v1/live                    calls in progress right now
+    DELETE /api/v1/live/{id}            hang up a live call
+
+`audio_url` streams the recording with the same Bearer key. Post-call webhooks
+push the same data to a URL you set on the agent, if you would rather not poll.
+
+## Knowledge, contacts, do-not-call
+
+    GET/POST /api/v1/knowledge          knowledge bases an agent can be pointed at
+    GET/POST /api/v1/contacts           contacts, and /api/v1/contact-lists
+    GET/POST /api/v1/do-not-call        read it before you dial, not just append
+
+## Billing, including paying with no human at all
+
+    GET  /api/v1/billing                balance, plan, usage
+    GET  /api/v1/overview               KPIs and call-volume series
+    POST /api/v1/billing/topup          PayPal — returns an approval_url a human opens
+
+    GET  /api/v1/billing/x402           what we accept, and what you owe
+    POST /api/v1/billing/x402/topup/{amount}
+
+The x402 endpoints speak HTTP 402 with USDC on Base: your agent gets a
+`PAYMENT-REQUIRED` challenge, signs an EIP-3009 authorization, retries with
+`PAYMENT-SIGNATURE`, and the minutes land. No card, no checkout, no human.
+`POST /api/v1/agents` accepts the same challenge, so an agent can pay for the
+phone agent it is creating. The balance endpoint is free to call, so you can
+always discover that you are short before deciding to pay.
+
+## Worked example: a CRM lead qualifier
+
+Outbound. The agent asks your qualifying questions and every answer comes back
+as a captured variable, so the result is structured data, not a recording
+someone has to listen to.
+
+    GET  /api/v1/meta                    pick language, voice, LLM server
+    POST /api/v1/agents                  prompt = the qualifying questions;
+                                         set webhook_url to receive each result
+    POST /api/v1/contact-lists           the list the campaign draws from
+    POST /api/v1/contacts                the leads
+    GET  /api/v1/do-not-call             check BEFORE dialling — that is what
+                                         the list is for
+    POST /api/v1/agents/{id}/test-chat   score the script on a scripted
+                                         conversation before anyone is called
+    POST /api/v1/agents/{id}/test-call   one real call to hear it
+    GET  /api/v1/calls?date_from=...     then GET /api/v1/calls/{id} for the
+                                         transcript, summary and `vars`
+
+`vars` is `[[key, value], ...]` — the answers the agent captured. The same data
+arrives on `webhook_url` as each call ends, which is usually better than
+polling. Write those straight into your CRM.
+
+## Worked example: a practice appointment desk
+
+Inbound, with a real calendar. The agent checks availability while the caller
+is still on the line, books, and emails the invitation.
+
+    GET  /api/v1/profile                 check google_calendar_connected FIRST
+    POST /api/v1/agents                  tools: "cal"  (or "secretary" for the
+                                         full bundle: contacts, calendar,
+                                         scheduled calls, do-not-call, notes,
+                                         email)
+    GET  /api/v1/numbers
+    PATCH /api/v1/numbers/{id}           point the practice number at the agent
+    POST /api/v1/agents/{id}/test-call   verify end to end
+    GET  /api/v1/calls/{id}              transcript, and what was booked
+
+**One thing you cannot do headlessly.** Connecting the Google Calendar is an
+OAuth consent and must be done once by the human in the dashboard. `GET
+/api/v1/profile` reports `google_calendar_connected` — check it before you
+build a booking agent, because a `cal` tool with no calendar behind it will
+take the call and fail to book. If it is false, ask the user to connect it;
+everything after that is API.
+
+`tools` is a comma-separated string of built-in capability names, NOT an
+OpenAI function-calling schema. `cal` gives the agent check_availability and
+book_appointment; the calendar actions are create and delete, so a reschedule
+is a delete followed by a create. Contacts the agent looks up on a call are the
+same records you manage at /api/v1/contacts.
+
+## Errors and limits
+
+Every non-2xx uses one shape: `{"error": "<snake_case_slug>", "message":
+"<human string>"}`, plus `"errors": {"field": [...]}` on a 422. List endpoints
+take `limit` (default 50, max 200) and `offset`, and return
+`meta: {total, limit, offset}`. Requests are throttled per key; test-call and
+test-chat have a tighter bucket of their own.
+
+Both PUT and PATCH work on every update route and do the same thing: only the
+fields you send are touched. You never need to GET-merge-PUT a whole record.
+
+## Background
+
+- [An AI agent builds a phone agent](https://www.callagent.pro/blog/ai-agent-builds-phone-agent)
+- [An AI agent pays its own bill with x402](https://www.callagent.pro/blog/ai-agent-pays-x402)
+- [Getting started](https://www.callagent.pro/blog/ai-phone-agent-getting-started)
+- [Connecting a Fritz!Box or DSL line](https://www.callagent.pro/blog/fritz-dsl-ai-agent)
